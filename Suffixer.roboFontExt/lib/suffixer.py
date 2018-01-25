@@ -8,14 +8,18 @@ With thanks to Frederik Berlaen, David Jonathan Ross
 from AppKit import NSApp, NSMenuItem, NSAlternateKeyMask, NSCommandKeyMask
 from lib.baseObjects import CallbackWrapper
 from mojo.extensions import registerExtensionDefaults, getExtensionDefault, setExtensionDefault
-from robofab.interface.all.dialogs import Message
+try:
+    from robofab.interface.all.dialogs import Message
+except:
+    from mojo.UI import Message
+
 from vanilla import *
 
 
 class Suffixer:
     
     def __init__(self):
-    	""" Add the "Change Suffixes" menu item to the Font menu. """
+        """ Add the "Change Suffixes" menu item to the Font menu. """
         title = "Change Suffixes..."
         fontMenu = NSApp().mainMenu().itemWithTitle_("Font")
         if not fontMenu:
@@ -34,7 +38,7 @@ class Suffixer:
         
         
     def openWindow(self, sender=None):
-    	""" Initialize the input window. """
+        """ Initialize the input window. """
         presets = [
             "case", "dnom", "fina", "hist", "init", "isol", "locl", "lnum", "medi", "numr", "onum", "ordn", "tnum",
             "pcap", "salt", "sinf", "smcp", "ss01", "ss02", "ss03", "ss04", "ss05", "ss06", "ss07", "ss08",
@@ -96,7 +100,7 @@ class Suffixer:
         
         
     def replaceCheckCallback(self, sender):
-    	""" Toggle UI options depending on selection whether to replace or append the new suffix. """
+        """ Toggle UI options depending on selection whether to replace or append the new suffix. """
         if self.w.replace.get() == False:
             self.w.scope.set(0)
             self.w.scope.enable(0)
@@ -105,7 +109,7 @@ class Suffixer:
         
     
     def _findSuffix(self, gname):
-    	""" Find the suffix (if any) in a given glyph name. """
+        """ Find the suffix (if any) in a given glyph name. """
         i = gname.find(".")
         if i != -1 and i != 0:
             return gname[i+1:]
@@ -114,7 +118,7 @@ class Suffixer:
         
         
     def replaceSuffixes(self, sender):
-    	""" Handle replacing/appending of suffixes. """
+        """ Handle replacing/appending of suffixes. """
         mode = "replace" if self.w.replace.get() == 1 else "append"
         oldSuffix = self.w.oldSuffix.getItems()[self.w.oldSuffix.get()]
         enteredSuffix = self.w.newSuffix.get()
@@ -133,41 +137,40 @@ class Suffixer:
             Message(u"Cannot append an empty suffix.\n(Or you could just pretend I've already done it.)")
 
         else:
-	        scope = self.f.keys() if self.w.scope.get() == 1 else self.f.selection
+            scope = self.f.keys() if self.w.scope.get() == 1 else self.f.selection
 
-	        if mode == "replace":
-	            for gname in scope:
-	                if gname.endswith(suffixes[0]):
-	                    sufLen = len(suffixes[0])
-	                    if len(suffixes[1]) > 0:
-	                        newName = gname[:-sufLen] + suffixes[1]
-	                    else:
-	                        sufLenWithPeriod = sufLen+1
-	                        newName = gname[:-sufLenWithPeriod]
+            if mode == "replace":
+                for gname in scope:
+                    if gname.endswith(suffixes[0]):
+                        sufLen = len(suffixes[0])
+                        if len(suffixes[1]) > 0:
+                            newName = gname[:-sufLen] + suffixes[1]
+                        else:
+                            sufLenWithPeriod = sufLen+1
+                            newName = gname[:-sufLenWithPeriod]
                         self._changeGlyphname(gname, newName)
-	                        
-	        elif mode == "append":
-	            for gname in scope:
-	                newName = gname + "." + suffixes[1]
-	                self._changeGlyphname(gname, newName)
-	                
-	        self.f.autoUnicodes()
-	        self.f.update()
-	        
-	        # store new values as defaults
-	        savedPresets = getExtensionDefault("nl.typologic.suffixer.presetSuffixes")
-	        if enteredSuffix != "" and enteredSuffix not in savedPresets:
-	            savedPresetsList = savedPresets.split()
-	            savedPresetsList.append(enteredSuffix)
-	            savedPresetsList.sort()
-	            newPresets = " ".join(savedPresetsList) 
-	            setExtensionDefault("nl.typologic.suffixer.presetSuffixes", newPresets)
-	        
-	        self.w.close()
+                            
+            elif mode == "append":
+                for gname in scope:
+                    newName = gname + "." + suffixes[1]
+                    self._changeGlyphname(gname, newName)
+
+            self.f.update()
+            
+            # store new values as defaults
+            savedPresets = getExtensionDefault("nl.typologic.suffixer.presetSuffixes")
+            if enteredSuffix != "" and enteredSuffix not in savedPresets:
+                savedPresetsList = savedPresets.split()
+                savedPresetsList.append(enteredSuffix)
+                savedPresetsList.sort()
+                newPresets = " ".join(savedPresetsList) 
+                setExtensionDefault("nl.typologic.suffixer.presetSuffixes", newPresets)
+            
+            self.w.close()
         
         
     def _changeGlyphname(self, gname, newName):
-    	""" Assign a new glyphname to a glyph. """
+        """ Assign a new glyphname to a glyph. """
         print "Suffixer: Changing name of %s to %s" % (gname, newName)
         self.f[gname].prepareUndo("Change Suffix")
         
@@ -185,8 +188,7 @@ class Suffixer:
             ### Think about how to address this
         # actual renaming of targeted glyph
         self.f.renameGlyph(gname, newName, renameComponents=True, renameGroups=True, renameKerning=True)
-        self.f[newName].autoUnicodes()
         self.f[newName].performUndo()
-            
+
         
 Suffixer()
